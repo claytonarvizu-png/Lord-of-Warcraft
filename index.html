@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Arcane Arena</title>
+  <link rel="stylesheet" href="./style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Arcane Arena</p>
+        <h1>Shrum Lord of the Gays</h1>
+      </div>
+      <div class="status-pill" id="status-pill">Booting</div>
+    </header>
+    <main class="stage">
+      <section class="canvas-frame">
+        <canvas id="game-canvas" width="1440" height="860" aria-label="Arcane Arena"></canvas>
+        <div class="hud-layer" id="hud-layer"></div>
+        <div class="overlay-layer" id="overlay-layer"></div>
+      </section>
+      <aside class="side-panel">
+        <section>
+          <h2>Run Guide</h2>
+          <p>Survive five consecutive boss fights, collect the post-boss heals, and break the gauntlet without collapsing your run.</p>
+        </section>
+        <section>
+          <h2>Controls</h2>
+          <ul>
+            <li><span>Move</span><strong>WASD</strong></li>
+            <li><span>Aim</span><strong>Mouse</strong></li>
+            <li><span>Primary</span><strong>Left click</strong></li>
+            <li><span>Spell 2</span><strong>R</strong></li>
+            <li><span>Spell 3</span><strong>F / T / G</strong></li>
+            <li><span>Dash</span><strong>Space</strong></li>
+            <li><span>Pause</span><strong>P</strong></li>
+          </ul>
+        </section>
+      </aside>
+    </main>
+  </div>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
