@@ -924,8 +924,9 @@ function renderEffects(ctx, state) {
         ctx.font = effect.heavy ? "bold 24px Georgia" : "bold 20px Georgia";
         ctx.textAlign = "center";
         ctx.globalAlpha = Math.max(0.1, 1 - progress);
-        ctx.strokeText(`${effect.isHealing ? "+" : "-"}${effect.value}`, effect.position.x, effect.position.y - 18 - (progress * 22));
-        ctx.fillText(`${effect.isHealing ? "+" : "-"}${effect.value}`, effect.position.x, effect.position.y - 18 - (progress * 22));
+        const text = effect.label ?? `${effect.isHealing ? "+" : "-"}${effect.value}`;
+        ctx.strokeText(text, effect.position.x, effect.position.y - 18 - (progress * 22));
+        ctx.fillText(text, effect.position.x, effect.position.y - 18 - (progress * 22));
         ctx.globalAlpha = 1;
         ctx.textAlign = "start";
       } else if (effect.type === "banner") {

@@ -216,7 +216,12 @@ function castGraftPattern(state, boss, direction) {
   const pattern = boss.patternIndex % 3;
   boss.telegraphMs = 780;
   if (pattern === 0) {
-    boss.shieldMs = 5000;
+    if (boss.shieldMs <= 0) {
+      boss.shieldMs = 4200;
+      boss.patternTimerMs = 5200;
+    } else {
+      boss.patternTimerMs = 1600;
+    }
     for (let index = 0; index < (boss.phase === 2 ? 8 : 6); index += 1) {
       const angle = (Math.PI * 2 * index) / (boss.phase === 2 ? 8 : 6);
       createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage - 4, {
@@ -227,7 +232,6 @@ function castGraftPattern(state, boss, direction) {
         variant: "moon_shard",
       });
     }
-    boss.patternTimerMs = 2200;
     return;
   }
   if (pattern === 1) {

@@ -22,7 +22,21 @@ export function updateCollisionSystem(state) {
         }
         if (distanceBetween(projectile.position, enemy.position) <= projectile.radius + enemy.radius) {
           if (enemy.shieldMs > 0) {
+            enemy.shieldMs = Math.max(0, enemy.shieldMs - 900);
             spawnImpactEffect(state, enemy.position, "#8dd6ff", enemy.radius + 12, true);
+            if (enemy.shieldMs <= 0) {
+              state.effects.push({
+                type: "damage_text",
+                position: { ...enemy.position },
+                ttl: 620,
+                value: 0,
+                color: "#b6eeff",
+                rise: 0,
+                isHealing: false,
+                heavy: true,
+                label: "Shield Broken",
+              });
+            }
             projectile.remove = true;
             break;
           }
@@ -96,7 +110,7 @@ export function updateCollisionSystem(state) {
         style: "meteor",
       });
     }
-    if (effect.ttl <= 0) {
+      if (effect.ttl <= 0) {
       effect.remove = true;
     }
   }
@@ -223,6 +237,7 @@ function spawnDamageFeedback(state, position, amount, color, isHealing = false, 
     rise: 0,
     isHealing,
     heavy,
+    label: null,
   });
 }
 
