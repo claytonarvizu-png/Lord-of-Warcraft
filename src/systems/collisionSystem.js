@@ -1,4 +1,5 @@
 import { PICKUP_TYPES } from "../game/config.js";
+import { ENEMIES } from "../data/enemies.js";
 import { clamp, distanceBetween, randomFloat, removeDead } from "../game/helpers.js";
 import { createPickup } from "../entities/pickup.js";
 
@@ -21,10 +22,12 @@ export function updateCollisionSystem(state) {
           continue;
         }
         if (distanceBetween(projectile.position, enemy.position) <= projectile.radius + enemy.radius) {
-          if (enemy.shieldMs > 0) {
-            enemy.shieldMs = Math.max(0, enemy.shieldMs - 900);
-            spawnImpactEffect(state, enemy.position, "#8dd6ff", enemy.radius + 12, true);
-            if (enemy.shieldMs <= 0) {
+          if (enemy.shieldMs > 0 || enemy.minionShield) {
+            if (enemy.shieldMs > 0) {
+              enemy.shieldMs = Math.max(0, enemy.shieldMs - 900);
+            }
+            spawnImpactEffect(state, enemy.position, enemy.minionShield ? "#a885ff" : "#8dd6ff", enemy.radius + 12, true);
+            if (enemy.shieldMs <= 0 && !enemy.minionShield) {
               state.effects.push({
                 type: "damage_text",
                 position: { ...enemy.position },
@@ -143,6 +146,21 @@ function cleanupDefeatedEnemies(state) {
 }
 
 function rewardEnemyDeath(state, enemy) {
+  if (enemy.bossMinion) {
+    const definition = ENEMIES[enemy.definitionId];
+    state.effects.push({
+      type: "damage_text",
+      position: { ...enemy.position },
+      ttl: 620,
+      value: 0,
+      color: "#dff7ff",
+      rise: 0,
+      isHealing: false,
+      heavy: true,
+      label: `${definition?.name ?? "Warden"} Down`,
+    });
+    return;
+  }
   const goldAmount = Math.round(enemy.rewards.goldMin + ((enemy.rewards.goldMax - enemy.rewards.goldMin) * 0.5));
   state.pickups.push(createPickup(nextEntityId(state), {
     pickupType: PICKUP_TYPES.GOLD,

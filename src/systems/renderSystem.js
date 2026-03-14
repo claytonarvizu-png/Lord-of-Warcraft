@@ -6,6 +6,18 @@ import { ARMORS, UPGRADES, WEAPONS } from "../data/upgrades.js";
 import { ENEMIES } from "../data/enemies.js";
 import { getComputedSpell } from "./progressionSystem.js";
 
+const ENEMY_SPRITE_URLS = {
+  qwibus: new URL("../../assets/sprites/qwibus.svg", import.meta.url).href,
+  graft_lord: new URL("../../assets/sprites/graft_lord.svg", import.meta.url).href,
+  moon_queen: new URL("../../assets/sprites/moon_queen.svg", import.meta.url).href,
+  blood_tyrant: new URL("../../assets/sprites/blood_tyrant.svg", import.meta.url).href,
+  fire_archmage: new URL("../../assets/sprites/starbreaker.svg", import.meta.url).href,
+  issy: new URL("../../assets/sprites/issy.svg", import.meta.url).href,
+  vellido: new URL("../../assets/sprites/vellido.svg", import.meta.url).href,
+};
+
+const enemySpriteCache = new Map();
+
 export function createRenderSystem({ ctx, hudLayer }) {
   return {
     render(state) {
@@ -252,10 +264,20 @@ function renderEntities(ctx, state) {
       ctx.save();
       ctx.translate(enemy.position.x, enemy.position.y);
 
-      if (enemy.definitionId === "qwibus") {
+      if (renderEnemySprite(ctx, enemy)) {
+        // Use loaded sprite when available; fallback shapes stay below for initial paint.
+      } else if (enemy.definitionId === "qwibus") {
         renderQwibusBoss(ctx, enemy);
-      } else if (enemy.boss) {
-        renderLichQueen(ctx, enemy);
+      } else if (enemy.definitionId === "graft_lord") {
+        renderGraftLord(ctx, enemy);
+      } else if (enemy.definitionId === "moon_queen") {
+        renderMoonQueen(ctx, enemy);
+      } else if (enemy.definitionId === "blood_tyrant") {
+        renderBloodTyrant(ctx, enemy);
+      } else if (enemy.definitionId === "fire_archmage") {
+        renderStarbreaker(ctx, enemy);
+      } else if (enemy.definitionId === "issy" || enemy.definitionId === "vellido") {
+        renderWardenFallback(ctx, enemy);
       } else if (enemy.definitionId === "apprentice_wizard" || enemy.definitionId === "summoner") {
         renderQwibusHunter(ctx, enemy);
       } else if (enemy.definitionId === "elemental_creature") {
@@ -272,12 +294,12 @@ function renderEntities(ctx, state) {
       ctx.fillRect(enemy.position.x - 24, enemy.position.y - enemy.radius - 14, 48, 6);
       ctx.fillStyle = enemy.boss ? "#70c3ff" : "#7dbfd6";
       ctx.fillRect(enemy.position.x - 24, enemy.position.y - enemy.radius - 14, 48 * Math.max(0, enemy.hp / enemy.maxHp), 6);
-      if (enemy.shieldMs > 0) {
-        ctx.fillStyle = "rgba(131, 225, 255, 0.14)";
+      if (enemy.shieldMs > 0 || enemy.minionShield) {
+        ctx.fillStyle = enemy.minionShield ? "rgba(177, 118, 255, 0.16)" : "rgba(131, 225, 255, 0.14)";
         ctx.beginPath();
         ctx.arc(enemy.position.x, enemy.position.y, enemy.radius + 20, 0, Math.PI * 2);
         ctx.fill();
-        ctx.strokeStyle = "rgba(151, 224, 255, 0.9)";
+        ctx.strokeStyle = enemy.minionShield ? "rgba(199, 138, 255, 0.94)" : "rgba(151, 224, 255, 0.9)";
         ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.arc(enemy.position.x, enemy.position.y, enemy.radius + 16, 0, Math.PI * 2);
@@ -285,7 +307,7 @@ function renderEntities(ctx, state) {
         ctx.textAlign = "center";
         ctx.fillStyle = "#dff7ff";
         ctx.font = "bold 13px Georgia";
-        ctx.fillText("Invulnerable", enemy.position.x, enemy.position.y - enemy.radius - 24);
+        ctx.fillText(enemy.minionShield ? "Wardens Alive" : "Invulnerable", enemy.position.x, enemy.position.y - enemy.radius - 24);
       }
       if (enemy.telegraphMs > 0) {
         ctx.strokeStyle = "rgba(255, 160, 111, 0.65)";
@@ -294,15 +316,60 @@ function renderEntities(ctx, state) {
         ctx.stroke();
       }
       ctx.textAlign = "center";
-      ctx.fillStyle = "#7fd7ff";
-      ctx.font = "11px Georgia";
-      ctx.fillText("Qwibus", enemy.position.x, enemy.position.y + enemy.radius + 18);
       ctx.fillStyle = "#d7ebf7";
       ctx.font = "12px Georgia";
-      ctx.fillText(definition.name, enemy.position.x, enemy.position.y + enemy.radius + 34);
+      if (enemy.bossMinion) {
+        ctx.fillText(definition.name, enemy.position.x, enemy.position.y + enemy.radius + 22);
+      } else if (enemy.boss) {
+        ctx.fillStyle = "#9dd8ff";
+        ctx.font = "11px Georgia";
+        ctx.fillText("Boss", enemy.position.x, enemy.position.y + enemy.radius + 18);
+        ctx.fillStyle = "#d7ebf7";
+        ctx.font = "12px Georgia";
+        ctx.fillText(definition.name, enemy.position.x, enemy.position.y + enemy.radius + 34);
+      } else {
+        ctx.fillStyle = "#7fd7ff";
+        ctx.font = "11px Georgia";
+        ctx.fillText("Qwibus", enemy.position.x, enemy.position.y + enemy.radius + 18);
+        ctx.fillStyle = "#d7ebf7";
+        ctx.font = "12px Georgia";
+        ctx.fillText(definition.name, enemy.position.x, enemy.position.y + enemy.radius + 34);
+      }
       ctx.textAlign = "start";
     }
   });
+}
+
+function renderEnemySprite(ctx, enemy) {
+  const sprite = getEnemySprite(enemy.definitionId);
+  if (!sprite || !sprite.complete || !sprite.naturalWidth) {
+    return false;
+  }
+  const scale = enemy.boss ? 2.55 : enemy.bossMinion ? 1.7 : 1.2;
+  const width = enemy.radius * scale;
+  const height = enemy.radius * scale * 1.28;
+  if (enemy.damageFlashMs > 0) {
+    ctx.globalAlpha = 0.85;
+    ctx.shadowBlur = 20;
+    ctx.shadowColor = "#fff1d7";
+  }
+  ctx.drawImage(sprite, -width / 2, -height / 2 - (enemy.boss ? 10 : 4), width, height);
+  ctx.globalAlpha = 1;
+  ctx.shadowBlur = 0;
+  return true;
+}
+
+function getEnemySprite(definitionId) {
+  const url = ENEMY_SPRITE_URLS[definitionId];
+  if (!url) {
+    return null;
+  }
+  if (!enemySpriteCache.has(definitionId)) {
+    const image = new Image();
+    image.src = url;
+    enemySpriteCache.set(definitionId, image);
+  }
+  return enemySpriteCache.get(definitionId);
 }
 
 function renderQwibusHunter(ctx, enemy) {
@@ -368,6 +435,23 @@ function renderQwibusHunter(ctx, enemy) {
   ctx.lineTo(-1, 6);
   ctx.lineTo(1, 6);
   ctx.lineTo(3, -4);
+  ctx.stroke();
+}
+
+function renderWardenFallback(ctx, enemy) {
+  ctx.fillStyle = enemy.definitionId === "issy" ? "#7b4cff" : "#3f5b74";
+  ctx.beginPath();
+  ctx.arc(0, 0, enemy.radius + 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#dfefff";
+  ctx.beginPath();
+  ctx.arc(0, -4, enemy.radius * 0.52, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = enemy.definitionId === "issy" ? "#c0a6ff" : "#b8e4ff";
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  ctx.moveTo(-enemy.radius * 0.5, enemy.radius * 0.2);
+  ctx.lineTo(enemy.radius * 0.5, enemy.radius * 0.2);
   ctx.stroke();
 }
 
@@ -501,87 +585,124 @@ function renderQwibusBoss(ctx, enemy) {
   ctx.fill();
 }
 
-function renderLichQueen(ctx, enemy) {
-  ctx.fillStyle = "rgba(119, 196, 255, 0.22)";
+function renderGraftLord(ctx, enemy) {
+  ctx.fillStyle = "rgba(136, 214, 255, 0.2)";
   ctx.beginPath();
-  ctx.arc(0, 0, enemy.radius + 12, 0, Math.PI * 2);
+  ctx.arc(0, 0, enemy.radius + 14, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.fillStyle = "#2d3444";
+  ctx.fillStyle = "#3f444f";
   ctx.beginPath();
-  ctx.moveTo(-enemy.radius + 4, enemy.radius + 10);
-  ctx.lineTo(enemy.radius - 4, enemy.radius + 10);
-  ctx.lineTo(enemy.radius - 10, 6);
-  ctx.lineTo(enemy.radius - 16, -10);
-  ctx.lineTo(enemy.radius - 6, -18);
-  ctx.lineTo(10, -12);
-  ctx.lineTo(0, 2);
-  ctx.lineTo(-10, -12);
-  ctx.lineTo(-enemy.radius + 6, -18);
-  ctx.lineTo(-enemy.radius + 16, -10);
-  ctx.lineTo(-enemy.radius + 10, 6);
+  ctx.moveTo(-enemy.radius, enemy.radius + 14);
+  ctx.lineTo(enemy.radius, enemy.radius + 14);
+  ctx.lineTo(enemy.radius - 6, -6);
+  ctx.lineTo(enemy.radius - 16, -28);
+  ctx.lineTo(-enemy.radius + 16, -28);
+  ctx.lineTo(-enemy.radius + 6, -6);
   ctx.closePath();
   ctx.fill();
-
-  ctx.fillStyle = "#556176";
+  ctx.fillStyle = enemy.damageFlashMs > 0 ? "#fff8ef" : "#9aa0ae";
   ctx.beginPath();
-  ctx.moveTo(-14, -22);
-  ctx.lineTo(0, -30);
-  ctx.lineTo(14, -22);
-  ctx.lineTo(10, -4);
-  ctx.lineTo(-10, -4);
+  ctx.rect(-16, -30, 32, 30);
   ctx.closePath();
   ctx.fill();
-
-  ctx.strokeStyle = enemy.damageFlashMs > 0 ? "#fff4f4" : "#b7c7d9";
-  ctx.lineWidth = 3;
+  ctx.fillStyle = "#84cfff";
+  ctx.beginPath();
+  ctx.rect(-8, -18, 16, 8);
+  ctx.fill();
+  ctx.strokeStyle = "#d8ecff";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-enemy.radius - 6, -12);
+  ctx.lineTo(-enemy.radius + 4, 10);
+  ctx.moveTo(enemy.radius + 6, -12);
+  ctx.lineTo(enemy.radius - 4, 10);
   ctx.stroke();
+}
 
-  ctx.fillStyle = "#1d222e";
+function renderMoonQueen(ctx, enemy) {
+  ctx.fillStyle = "rgba(154, 207, 255, 0.16)";
   ctx.beginPath();
-  ctx.moveTo(-7, -20);
-  ctx.lineTo(0, -14);
-  ctx.lineTo(7, -20);
-  ctx.lineTo(4, -8);
-  ctx.lineTo(-4, -8);
+  ctx.arc(0, 0, enemy.radius + 16, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#1d2741";
+  ctx.beginPath();
+  ctx.moveTo(-enemy.radius + 6, enemy.radius + 18);
+  ctx.lineTo(enemy.radius - 6, enemy.radius + 18);
+  ctx.lineTo(enemy.radius - 14, -10);
+  ctx.lineTo(0, -enemy.radius - 18);
+  ctx.lineTo(-enemy.radius + 14, -10);
   ctx.closePath();
   ctx.fill();
-
-  ctx.strokeStyle = "#7ed7ff";
-  ctx.lineWidth = 2.5;
+  ctx.fillStyle = enemy.damageFlashMs > 0 ? "#f7fbff" : "#bfd7f4";
   ctx.beginPath();
-  ctx.moveTo(-6, -16);
-  ctx.lineTo(0, -12);
-  ctx.lineTo(6, -16);
-  ctx.stroke();
-
-  ctx.fillStyle = "#404a60";
-  ctx.beginPath();
-  ctx.moveTo(-enemy.radius + 6, -4);
-  ctx.lineTo(-enemy.radius - 10, 10);
-  ctx.lineTo(-enemy.radius + 2, 18);
-  ctx.lineTo(-8, 6);
-  ctx.closePath();
+  ctx.arc(0, -18, 14, 0, Math.PI * 2);
   ctx.fill();
-
-  ctx.beginPath();
-  ctx.moveTo(enemy.radius - 6, -4);
-  ctx.lineTo(enemy.radius + 12, 8);
-  ctx.lineTo(enemy.radius - 2, 20);
-  ctx.lineTo(8, 6);
-  ctx.closePath();
-  ctx.fill();
-
-  ctx.fillStyle = "#6c7b91";
-  ctx.fillRect(-10, 2, 20, 20);
-
-  ctx.strokeStyle = "#79cfff";
+  ctx.strokeStyle = "#dff6ff";
   ctx.lineWidth = 3;
   ctx.beginPath();
-  ctx.moveTo(enemy.radius + 10, -2);
-  ctx.lineTo(enemy.radius + 26, -12);
-  ctx.lineTo(enemy.radius + 18, 12);
+  ctx.arc(0, -18, 26, Math.PI * 0.18, Math.PI * 0.82);
   ctx.stroke();
+}
+
+function renderBloodTyrant(ctx, enemy) {
+  ctx.fillStyle = "rgba(216, 66, 98, 0.18)";
+  ctx.beginPath();
+  ctx.arc(0, 0, enemy.radius + 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#411924";
+  ctx.beginPath();
+  ctx.moveTo(-enemy.radius, enemy.radius + 16);
+  ctx.lineTo(enemy.radius, enemy.radius + 16);
+  ctx.lineTo(enemy.radius - 8, -8);
+  ctx.lineTo(12, -enemy.radius - 16);
+  ctx.lineTo(-12, -enemy.radius - 16);
+  ctx.lineTo(-enemy.radius + 8, -8);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = enemy.damageFlashMs > 0 ? "#ffe8ef" : "#a9314f";
+  ctx.beginPath();
+  ctx.arc(0, -16, 14, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#ff9eb4";
+  ctx.lineWidth = 4;
+  ctx.beginPath();
+  ctx.moveTo(-enemy.radius - 10, 6);
+  ctx.lineTo(-12, -10);
+  ctx.lineTo(0, 10);
+  ctx.lineTo(12, -10);
+  ctx.lineTo(enemy.radius + 10, 6);
+  ctx.stroke();
+}
+
+function renderStarbreaker(ctx, enemy) {
+  ctx.fillStyle = "rgba(113, 196, 255, 0.2)";
+  ctx.beginPath();
+  ctx.arc(0, 0, enemy.radius + 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.fillStyle = "#223244";
+  ctx.beginPath();
+  ctx.moveTo(-enemy.radius - 4, enemy.radius + 18);
+  ctx.lineTo(enemy.radius + 4, enemy.radius + 18);
+  ctx.lineTo(enemy.radius - 2, -4);
+  ctx.lineTo(18, -enemy.radius - 16);
+  ctx.lineTo(0, -enemy.radius - 24);
+  ctx.lineTo(-18, -enemy.radius - 16);
+  ctx.lineTo(-enemy.radius + 2, -4);
+  ctx.closePath();
+  ctx.fill();
+  ctx.fillStyle = enemy.damageFlashMs > 0 ? "#fdfcff" : "#d6e6ff";
+  ctx.beginPath();
+  ctx.arc(0, -18, 15, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.strokeStyle = "#7ecfff";
+  ctx.lineWidth = 3.5;
+  for (let index = 0; index < 4; index += 1) {
+    const angle = (Math.PI * 2 * index) / 4;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(angle) * 8, Math.sin(angle) * 8);
+    ctx.lineTo(Math.cos(angle) * (enemy.radius + 18), Math.sin(angle) * (enemy.radius + 18));
+    ctx.stroke();
+  }
 }
 
 function renderProjectiles(ctx, state) {

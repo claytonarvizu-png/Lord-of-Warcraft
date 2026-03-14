@@ -85,6 +85,7 @@ function updateBossPattern(state, boss, direction, distance) {
   const moveDirection = distance > 250 ? 1 : -0.3;
   boss.velocity.x = direction.x * boss.speed * moveDirection;
   boss.velocity.y = direction.y * boss.speed * moveDirection;
+  updateBossWardens(state, boss);
   if (boss.patternTimerMs > 0) {
     return;
   }
@@ -263,6 +264,7 @@ function castGraftPattern(state, boss, direction) {
 }
 
 function castMoonPattern(state, boss, direction) {
+  ensureBossWardens(state, boss);
   const aimAngle = Math.atan2(direction.y, direction.x);
   const pattern = boss.patternIndex % 3;
   boss.telegraphMs = 860;
@@ -377,6 +379,7 @@ function castBloodPattern(state, boss, direction) {
 }
 
 function castStarbreakerPattern(state, boss, direction) {
+  ensureBossWardens(state, boss);
   const aimAngle = Math.atan2(direction.y, direction.x);
   const pattern = boss.patternIndex % 3;
   if (pattern === 0) {
@@ -455,6 +458,44 @@ function resolveEnemySeparation(state) {
       b.position.y += ny * overlap;
     }
   }
+}
+
+function updateBossWardens(state, boss) {
+  if (boss.definitionId !== "moon_queen" && boss.definitionId !== "fire_archmage") {
+    boss.minionShield = false;
+    return;
+  }
+  if (!boss.wardensSpawned) {
+    ensureBossWardens(state, boss);
+  }
+  const wardens = getBossWardens(state, boss.id);
+  boss.minionShield = wardens.length > 0;
+}
+
+function ensureBossWardens(state, boss) {
+  if (boss.wardensSpawned || (boss.definitionId !== "moon_queen" && boss.definitionId !== "fire_archmage")) {
+    return;
+  }
+  const offsets = [
+    { x: -88, y: -54, definition: ENEMIES.issy },
+    { x: 96, y: 46, definition: ENEMIES.vellido },
+  ];
+  for (const offset of offsets) {
+    const minion = createEnemy(nextEntityId(state), offset.definition, {
+      x: clamp(boss.position.x + offset.x, offset.definition.radius, getArenaBounds(state).width - offset.definition.radius),
+      y: clamp(boss.position.y + offset.y, offset.definition.radius, getArenaBounds(state).height - offset.definition.radius),
+    });
+    minion.bossMinionOwnerId = boss.id;
+    minion.bossMinion = true;
+    minion.role = "warden";
+    state.enemies.push(minion);
+  }
+  boss.wardensSpawned = true;
+  boss.minionShield = true;
+}
+
+function getBossWardens(state, bossId) {
+  return state.enemies.filter((enemy) => enemy.alive && enemy.bossMinionOwnerId === bossId);
 }
 
 function getArenaBounds(state) {

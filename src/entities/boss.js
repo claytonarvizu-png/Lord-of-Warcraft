@@ -11,5 +11,7 @@ export function createBoss(id, definition, position) {
   boss.barrageShots = 0;
   boss.shieldMs = 0;
   boss.shieldCooldownMs = 0;
+  boss.minionShield = false;
+  boss.wardensSpawned = false;
   return boss;
 }
