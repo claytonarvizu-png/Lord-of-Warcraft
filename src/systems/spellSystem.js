@@ -27,9 +27,7 @@ export function tryCastSpell(state, spellId) {
   const player = state.player;
   const spell = getComputedSpell(state, spellId);
   const cooldown = player.cooldowns[spellId] ?? 0;
-  const manaCost = spell.effectHandlerId === "cast_emerald_surge"
-    ? Math.round(player.stats.maxMana * 0.75)
-    : spell.manaCost;
+  const manaCost = spell.manaCost;
   if (cooldown > 0 || player.mana < manaCost) {
     return false;
   }
