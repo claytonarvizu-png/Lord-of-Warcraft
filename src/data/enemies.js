@@ -98,7 +98,7 @@ export const ENEMIES = {
     id: "graft_lord",
     name: "Graft Lord",
     role: "boss",
-    maxHp: 520,
+    maxHp: 702,
     speed: 92,
     radius: 34,
     contactDamage: 22,

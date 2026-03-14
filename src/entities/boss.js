@@ -10,5 +10,6 @@ export function createBoss(id, definition, position) {
   boss.telegraphMs = 0;
   boss.barrageShots = 0;
   boss.shieldMs = 0;
+  boss.shieldCooldownMs = 0;
   return boss;
 }

@@ -15,6 +15,7 @@ export function updateEnemyAISystem(state) {
     enemy.damageFlashMs = Math.max(0, enemy.damageFlashMs - state.time.step);
     enemy.attackTimerMs -= state.time.step;
     enemy.shieldMs = Math.max(0, (enemy.shieldMs ?? 0) - state.time.step);
+    enemy.shieldCooldownMs = Math.max(0, (enemy.shieldCooldownMs ?? 0) - state.time.step);
     applyEnemyStatuses(enemy, state.time.step);
     const toPlayer = { x: player.position.x - enemy.position.x, y: player.position.y - enemy.position.y };
     const distance = Math.max(1, Math.hypot(toPlayer.x, toPlayer.y));
@@ -216,11 +217,12 @@ function castGraftPattern(state, boss, direction) {
   const pattern = boss.patternIndex % 3;
   boss.telegraphMs = 780;
   if (pattern === 0) {
-    if (boss.shieldMs <= 0) {
-      boss.shieldMs = 4200;
-      boss.patternTimerMs = 5200;
+    if (boss.shieldMs <= 0 && boss.shieldCooldownMs <= 0) {
+      boss.shieldMs = 5000;
+      boss.shieldCooldownMs = 12000;
+      boss.patternTimerMs = 5400;
     } else {
-      boss.patternTimerMs = 1600;
+      boss.patternTimerMs = 1750;
     }
     for (let index = 0; index < (boss.phase === 2 ? 8 : 6); index += 1) {
       const angle = (Math.PI * 2 * index) / (boss.phase === 2 ? 8 : 6);

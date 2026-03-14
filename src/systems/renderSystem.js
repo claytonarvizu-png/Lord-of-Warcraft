@@ -273,11 +273,19 @@ function renderEntities(ctx, state) {
       ctx.fillStyle = enemy.boss ? "#70c3ff" : "#7dbfd6";
       ctx.fillRect(enemy.position.x - 24, enemy.position.y - enemy.radius - 14, 48 * Math.max(0, enemy.hp / enemy.maxHp), 6);
       if (enemy.shieldMs > 0) {
+        ctx.fillStyle = "rgba(131, 225, 255, 0.14)";
+        ctx.beginPath();
+        ctx.arc(enemy.position.x, enemy.position.y, enemy.radius + 20, 0, Math.PI * 2);
+        ctx.fill();
         ctx.strokeStyle = "rgba(151, 224, 255, 0.9)";
-        ctx.lineWidth = 4;
+        ctx.lineWidth = 5;
         ctx.beginPath();
         ctx.arc(enemy.position.x, enemy.position.y, enemy.radius + 16, 0, Math.PI * 2);
         ctx.stroke();
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#dff7ff";
+        ctx.font = "bold 13px Georgia";
+        ctx.fillText("Invulnerable", enemy.position.x, enemy.position.y - enemy.radius - 24);
       }
       if (enemy.telegraphMs > 0) {
         ctx.strokeStyle = "rgba(255, 160, 111, 0.65)";
