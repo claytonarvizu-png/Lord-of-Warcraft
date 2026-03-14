@@ -1,6 +1,7 @@
 import { createPlayer } from "./entities/player.js";
 import { ARENAS } from "./data/arenas.js";
 import { createGameLoop } from "./game/gameLoop.js";
+import { GAME_HEIGHT, GAME_WIDTH } from "./game/config.js";
 import { createInitialState } from "./game/gameState.js";
 import { updateCombatSystem } from "./systems/combatSystem.js";
 import { updateCollisionSystem } from "./systems/collisionSystem.js";
@@ -139,8 +140,8 @@ function render() {
 }
 
 function resizeCanvas() {
-  canvas.width = 1280;
-  canvas.height = 720;
+  canvas.width = GAME_WIDTH;
+  canvas.height = GAME_HEIGHT;
 }
 
 window.addEventListener("beforeunload", () => saveProgression(state));

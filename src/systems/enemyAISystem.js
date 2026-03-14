@@ -14,6 +14,7 @@ export function updateEnemyAISystem(state) {
     }
     enemy.damageFlashMs = Math.max(0, enemy.damageFlashMs - state.time.step);
     enemy.attackTimerMs -= state.time.step;
+    enemy.shieldMs = Math.max(0, (enemy.shieldMs ?? 0) - state.time.step);
     applyEnemyStatuses(enemy, state.time.step);
     const toPlayer = { x: player.position.x - enemy.position.x, y: player.position.y - enemy.position.y };
     const distance = Math.max(1, Math.hypot(toPlayer.x, toPlayer.y));
@@ -211,101 +212,214 @@ function castQwibusPattern(state, boss, direction) {
 }
 
 function castGraftPattern(state, boss, direction) {
+  const aimAngle = Math.atan2(direction.y, direction.x);
+  const pattern = boss.patternIndex % 3;
   boss.telegraphMs = 780;
-  if (boss.patternIndex % 2 === 0) {
+  if (pattern === 0) {
+    boss.shieldMs = 5000;
+    for (let index = 0; index < (boss.phase === 2 ? 8 : 6); index += 1) {
+      const angle = (Math.PI * 2 * index) / (boss.phase === 2 ? 8 : 6);
+      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage - 4, {
+        speed: boss.projectileSpeed - 30,
+        radius: 10,
+        color: "#9fd6ff",
+        glow: "#d8efff",
+        variant: "moon_shard",
+      });
+    }
+    boss.patternTimerMs = 2200;
+    return;
+  }
+  if (pattern === 1) {
     state.effects.push({
       type: "burst_telegraph",
       position: { ...boss.position },
-      radius: boss.phase === 2 ? 220 : 180,
-      ttl: 850,
-      color: "rgba(255, 152, 104, 0.32)",
+      radius: boss.phase === 2 ? 250 : 200,
+      ttl: 900,
+      color: "rgba(255, 152, 104, 0.28)",
       damage: boss.attackDamage + 10,
     });
-  } else {
-    for (let index = 0; index < 5; index += 1) {
-      const spread = -0.5 + index * 0.25;
-      const angle = Math.atan2(direction.y, direction.x) + spread;
-      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage, {
-        speed: boss.projectileSpeed + 20,
-        radius: 12,
-        color: "#f7a56f",
-      });
-    }
+    boss.patternTimerMs = 1500;
+    return;
   }
-  boss.patternTimerMs = boss.phase === 2 ? 1250 : 1550;
+  for (let index = 0; index < (boss.phase === 2 ? 7 : 5); index += 1) {
+    const spread = -0.7 + index * 0.28;
+    const angle = aimAngle + spread;
+    createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage + 1, {
+      speed: boss.projectileSpeed + 35,
+      radius: 12,
+      color: "#efb583",
+      glow: "#ffe4c0",
+      variant: "axe_arc",
+    });
+  }
+  boss.patternTimerMs = boss.phase === 2 ? 1120 : 1360;
 }
 
 function castMoonPattern(state, boss, direction) {
-  boss.telegraphMs = 820;
-  if (boss.patternIndex % 2 === 0) {
-    for (let index = 0; index < (boss.phase === 2 ? 8 : 6); index += 1) {
-      const angle = Math.atan2(direction.y, direction.x) + (-0.65 + index * 0.24);
-      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage - 3, {
-        speed: boss.projectileSpeed - 40,
+  const aimAngle = Math.atan2(direction.y, direction.x);
+  const pattern = boss.patternIndex % 3;
+  boss.telegraphMs = 860;
+  if (pattern === 0) {
+    const count = boss.phase === 2 ? 5 : 4;
+    for (let index = 0; index < count; index += 1) {
+      const angle = aimAngle + ((Math.PI * 2 * index) / count);
+      pushBurstTelegraph(
+        state,
+        {
+          x: state.player.position.x + Math.cos(angle) * 120,
+          y: state.player.position.y + Math.sin(angle) * 120,
+        },
+        82,
+        900 + (index * 80),
+        "rgba(120, 199, 255, 0.24)",
+        boss.attackDamage + 6,
+        "moon_seal",
+      );
+    }
+    boss.patternTimerMs = 1500;
+    return;
+  }
+  if (pattern === 1) {
+    for (let index = 0; index < (boss.phase === 2 ? 10 : 7); index += 1) {
+      const angle = ((Math.PI * 2 * index) / (boss.phase === 2 ? 10 : 7)) + (boss.patternIndex * 0.1);
+      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage - 5, {
+        speed: boss.projectileSpeed - 80,
         radius: 11,
-        color: "#8cd4ff",
+        color: "#a3d9ff",
+        glow: "#dff4ff",
+        variant: "moon_shard",
       });
     }
-  } else {
-    state.effects.push({
-      type: "burst_telegraph",
-      position: { ...boss.position },
-      radius: boss.phase === 2 ? 205 : 165,
-      ttl: 980,
-      color: "rgba(135, 203, 255, 0.26)",
-      damage: boss.attackDamage + 8,
-    });
+    boss.patternTimerMs = 1320;
+    return;
   }
-  boss.patternTimerMs = boss.phase === 2 ? 1280 : 1620;
+  for (let side = -1; side <= 1; side += 2) {
+    for (let index = 0; index < (boss.phase === 2 ? 4 : 3); index += 1) {
+      const angle = aimAngle + (side * (0.35 + index * 0.14));
+      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage - 2, {
+        speed: boss.projectileSpeed + 12,
+        radius: 10,
+        color: "#79beff",
+        glow: "#caecff",
+        variant: "moon_shard",
+      });
+    }
+  }
+  boss.patternTimerMs = 1200;
 }
 
 function castBloodPattern(state, boss, direction) {
-  boss.telegraphMs = 700;
-  for (let ring = 0; ring < (boss.phase === 2 ? 2 : 1); ring += 1) {
-    for (let index = 0; index < 6; index += 1) {
-      const angle = (Math.PI * 2 * index) / 6 + ring * 0.14;
-      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage, {
-        speed: boss.projectileSpeed + ring * 60,
-        radius: 10 + ring,
-        color: "#d94f6d",
+  const aimAngle = Math.atan2(direction.y, direction.x);
+  const pattern = boss.patternIndex % 3;
+  boss.telegraphMs = 760;
+  if (pattern === 0) {
+    const poolCount = boss.phase === 2 ? 4 : 3;
+    for (let index = 0; index < poolCount; index += 1) {
+      const angle = aimAngle + ((Math.PI * 2 * index) / poolCount);
+      state.effects.push({
+        type: "blood_pool",
+        position: {
+          x: state.player.position.x + Math.cos(angle) * 90,
+          y: state.player.position.y + Math.sin(angle) * 90,
+        },
+        radius: boss.phase === 2 ? 78 : 64,
+        ttl: 2600,
+        color: "rgba(182, 34, 64, 0.26)",
+        damagePerSecond: boss.phase === 2 ? 24 : 17,
       });
     }
+    boss.patternTimerMs = 1520;
+    return;
+  }
+  if (pattern === 1) {
+    for (let ring = 0; ring < (boss.phase === 2 ? 3 : 2); ring += 1) {
+      for (let index = 0; index < 6; index += 1) {
+        const angle = (Math.PI * 2 * index) / 6 + ring * 0.18;
+        createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage + ring, {
+          speed: boss.projectileSpeed + ring * 42,
+          radius: 10 + ring,
+          color: "#ca3659",
+          glow: "#f28aa0",
+          variant: "blood_orb",
+        });
+      }
+    }
+    boss.patternTimerMs = 1280;
+    return;
   }
   state.effects.push({
     type: "burst_telegraph",
     position: { ...boss.position },
-    radius: boss.phase === 2 ? 150 : 120,
-    ttl: 720,
+    radius: boss.phase === 2 ? 170 : 135,
+    ttl: 760,
     color: "rgba(217, 79, 109, 0.22)",
-    damage: boss.attackDamage + 6,
+    damage: boss.attackDamage + 8,
   });
-  boss.patternTimerMs = boss.phase === 2 ? 1200 : 1500;
+  for (let index = 0; index < (boss.phase === 2 ? 4 : 3); index += 1) {
+    const spread = -0.34 + index * 0.24;
+    const angle = aimAngle + spread;
+    createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage - 1, {
+      speed: boss.projectileSpeed + 18,
+      radius: 12,
+      color: "#ff6f93",
+      glow: "#ffbfd0",
+      variant: "blood_orb",
+    });
+  }
+  boss.patternTimerMs = 1380;
 }
 
 function castStarbreakerPattern(state, boss, direction) {
-  if (boss.patternIndex % 2 === 0) {
-    boss.telegraphMs = 650;
-    for (let index = 0; index < (boss.phase === 2 ? 10 : 7); index += 1) {
-      const spread = -0.65 + (index / Math.max(1, (boss.phase === 2 ? 9 : 6))) * 1.3;
-      const angle = Math.atan2(direction.y, direction.x) + spread;
-      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage, {
-        speed: boss.projectileSpeed + boss.phase * 35,
-        radius: 12,
-        color: "#77c8ff",
+  const aimAngle = Math.atan2(direction.y, direction.x);
+  const pattern = boss.patternIndex % 3;
+  if (pattern === 0) {
+    boss.telegraphMs = 1040;
+    const count = boss.phase === 2 ? 5 : 4;
+    for (let index = 0; index < count; index += 1) {
+      const angle = aimAngle + ((Math.PI * 2 * index) / count);
+      state.effects.push({
+        type: "meteor_target",
+        position: {
+          x: state.player.position.x + Math.cos(angle) * 130,
+          y: state.player.position.y + Math.sin(angle) * 130,
+        },
+        radius: boss.phase === 2 ? 92 : 74,
+        ttl: 920 + (index * 120),
+        damage: boss.attackDamage + 10,
+        color: "rgba(111, 196, 255, 0.18)",
       });
     }
-  } else {
-    boss.telegraphMs = 950;
-    state.effects.push({
-      type: "burst_telegraph",
-      position: { ...boss.position },
-      radius: boss.phase === 2 ? 240 : 190,
-      ttl: 950,
-      color: "rgba(111, 196, 255, 0.3)",
-      damage: boss.attackDamage + 12,
-    });
+    boss.patternTimerMs = 1580;
+    return;
   }
-  boss.patternTimerMs = boss.phase === 2 ? 1180 : 1500;
+  if (pattern === 1) {
+    boss.telegraphMs = 700;
+    for (let index = 0; index < (boss.phase === 2 ? 12 : 8); index += 1) {
+      const spread = -0.8 + (index / Math.max(1, (boss.phase === 2 ? 11 : 7))) * 1.6;
+      const angle = aimAngle + spread;
+      createEnemyProjectile(state, boss, { x: Math.cos(angle), y: Math.sin(angle) }, boss.attackDamage, {
+        speed: boss.projectileSpeed + 65,
+        radius: 12,
+        color: "#7ccfff",
+        glow: "#d6f4ff",
+        variant: "star_spear",
+      });
+    }
+    boss.patternTimerMs = 1180;
+    return;
+  }
+  boss.telegraphMs = 980;
+  state.effects.push({
+    type: "burst_telegraph",
+    position: { ...boss.position },
+    radius: boss.phase === 2 ? 260 : 210,
+    ttl: 960,
+    color: "rgba(111, 196, 255, 0.22)",
+    damage: boss.attackDamage + 12,
+    style: "nova",
+  });
+  boss.patternTimerMs = 1540;
 }
 
 function resolveEnemySeparation(state) {

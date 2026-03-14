@@ -9,5 +9,6 @@ export function createBoss(id, definition, position) {
   boss.patternTimerMs = definition.id === "qwibus" ? 900 : 1400;
   boss.telegraphMs = 0;
   boss.barrageShots = 0;
+  boss.shieldMs = 0;
   return boss;
 }

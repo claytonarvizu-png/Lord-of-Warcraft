@@ -11,7 +11,7 @@ export const PLAYER_BASE_STATS = {
   maxMana: 240,
   manaRegen: 10,
   moveSpeed: 292,
-  dashCooldownMs: 3000,
+  dashCooldownMs: 1000,
   dashDurationMs: 360,
   dashSpeed: 560,
   iFrameMs: 650,

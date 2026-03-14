@@ -21,6 +21,11 @@ export function updateCollisionSystem(state) {
           continue;
         }
         if (distanceBetween(projectile.position, enemy.position) <= projectile.radius + enemy.radius) {
+          if (enemy.shieldMs > 0) {
+            spawnImpactEffect(state, enemy.position, "#8dd6ff", enemy.radius + 12, true);
+            projectile.remove = true;
+            break;
+          }
           enemy.hp -= projectile.damage;
           enemy.damageFlashMs = 100;
           spawnDamageFeedback(state, enemy.position, projectile.damage, "#ffe596", false, projectile.damage >= 18);
@@ -69,6 +74,26 @@ export function updateCollisionSystem(state) {
         ttl: 220,
         color: "rgba(255, 132, 69, 0.62)",
         style: effect.style ?? "burst",
+      });
+    }
+    if (effect.type === "blood_pool") {
+      if (!player.isInvulnerable && distanceBetween(effect.position, player.position) <= effect.radius) {
+        damagePlayer(state, effect.damagePerSecond * (state.time.step / 1000));
+      }
+    }
+    if (effect.type === "meteor_target" && effect.ttl <= 0) {
+      if (!player.isInvulnerable && distanceBetween(effect.position, player.position) <= effect.radius) {
+        damagePlayer(state, effect.damage);
+      }
+      spawnImpactEffect(state, effect.position, "#8fd7ff", effect.radius + 20, true);
+      effect.remove = true;
+      state.effects.push({
+        type: "burst_flash",
+        position: { ...effect.position },
+        radius: effect.radius,
+        ttl: 240,
+        color: "rgba(136, 214, 255, 0.48)",
+        style: "meteor",
       });
     }
     if (effect.ttl <= 0) {

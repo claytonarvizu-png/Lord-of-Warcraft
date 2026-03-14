@@ -272,6 +272,13 @@ function renderEntities(ctx, state) {
       ctx.fillRect(enemy.position.x - 24, enemy.position.y - enemy.radius - 14, 48, 6);
       ctx.fillStyle = enemy.boss ? "#70c3ff" : "#7dbfd6";
       ctx.fillRect(enemy.position.x - 24, enemy.position.y - enemy.radius - 14, 48 * Math.max(0, enemy.hp / enemy.maxHp), 6);
+      if (enemy.shieldMs > 0) {
+        ctx.strokeStyle = "rgba(151, 224, 255, 0.9)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(enemy.position.x, enemy.position.y, enemy.radius + 16, 0, Math.PI * 2);
+        ctx.stroke();
+      }
       if (enemy.telegraphMs > 0) {
         ctx.strokeStyle = "rgba(255, 160, 111, 0.65)";
         ctx.beginPath();
@@ -628,6 +635,56 @@ function renderProjectileSprite(ctx, projectile) {
     ctx.beginPath();
     ctx.arc(0, 0, Math.max(2, projectile.radius - 7), 0, Math.PI * 2);
     ctx.fill();
+  } else if (projectile.variant === "moon_shard") {
+    ctx.rotate(Math.atan2(projectile.velocity.y, projectile.velocity.x));
+    ctx.fillStyle = "rgba(187, 229, 255, 0.28)";
+    ctx.beginPath();
+    ctx.arc(0, 0, projectile.radius + 7, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#bfe7ff";
+    ctx.beginPath();
+    ctx.moveTo(projectile.radius + 10, 0);
+    ctx.quadraticCurveTo(0, -projectile.radius - 8, -projectile.radius + 2, -2);
+    ctx.quadraticCurveTo(-2, projectile.radius + 7, projectile.radius + 10, 0);
+    ctx.fill();
+    ctx.fillStyle = "#f6fdff";
+    ctx.beginPath();
+    ctx.arc(2, -2, Math.max(2, projectile.radius - 5), 0, Math.PI * 2);
+    ctx.fill();
+  } else if (projectile.variant === "blood_orb") {
+    ctx.fillStyle = "rgba(255, 132, 159, 0.2)";
+    ctx.beginPath();
+    ctx.arc(0, 0, projectile.radius + 8, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#9c1738";
+    ctx.beginPath();
+    ctx.arc(0, 0, projectile.radius + 1, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.strokeStyle = "#ffb0c1";
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(-2, -2, Math.max(2, projectile.radius - 4), 0, Math.PI * 1.5);
+    ctx.stroke();
+  } else if (projectile.variant === "star_spear") {
+    ctx.rotate(Math.atan2(projectile.velocity.y, projectile.velocity.x));
+    ctx.fillStyle = "rgba(147, 221, 255, 0.24)";
+    ctx.beginPath();
+    ctx.ellipse(-3, 0, projectile.radius + 12, projectile.radius + 4, 0, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "#7dd5ff";
+    ctx.beginPath();
+    ctx.moveTo(projectile.radius + 12, 0);
+    ctx.lineTo(-projectile.radius - 6, -projectile.radius * 0.8);
+    ctx.lineTo(-projectile.radius + 2, 0);
+    ctx.lineTo(-projectile.radius - 6, projectile.radius * 0.8);
+    ctx.closePath();
+    ctx.fill();
+    ctx.strokeStyle = "#eefcff";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(-projectile.radius + 3, 0);
+    ctx.lineTo(projectile.radius + 7, 0);
+    ctx.stroke();
   } else if (projectile.variant === "axe_arc" || projectile.variant === "cleaver_arc") {
     ctx.rotate(Math.atan2(projectile.velocity.y, projectile.velocity.x));
     ctx.fillStyle = projectile.variant === "axe_arc" ? "#ff9f59" : "#ffd7ae";
@@ -765,12 +822,56 @@ function renderEffects(ctx, state) {
             ctx.lineTo(effect.position.x + Math.cos(angle) * (effect.radius * 0.82), effect.position.y + Math.sin(angle) * (effect.radius * 0.82));
             ctx.stroke();
           }
+        } else if (effect.style === "moon_seal") {
+          ctx.fillStyle = effect.type === "burst_flash" ? "rgba(165, 228, 255, 0.32)" : effect.color;
+          ctx.beginPath();
+          ctx.arc(effect.position.x, effect.position.y, effect.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(221, 248, 255, 0.88)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.arc(effect.position.x, effect.position.y, effect.radius * 0.72, Math.PI * 0.18, Math.PI * 1.82);
+          ctx.stroke();
+        } else if (effect.style === "nova" || effect.style === "meteor") {
+          ctx.fillStyle = effect.color;
+          ctx.beginPath();
+          ctx.arc(effect.position.x, effect.position.y, effect.radius, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.strokeStyle = "rgba(218, 246, 255, 0.86)";
+          ctx.lineWidth = 3;
+          for (let index = 0; index < 6; index += 1) {
+            const angle = (Math.PI * 2 * index) / 6;
+            ctx.beginPath();
+            ctx.moveTo(effect.position.x + Math.cos(angle) * (effect.radius * 0.2), effect.position.y + Math.sin(angle) * (effect.radius * 0.2));
+            ctx.lineTo(effect.position.x + Math.cos(angle) * (effect.radius * 0.92), effect.position.y + Math.sin(angle) * (effect.radius * 0.92));
+            ctx.stroke();
+          }
         } else {
           ctx.fillStyle = effect.color;
           ctx.beginPath();
           ctx.arc(effect.position.x, effect.position.y, effect.radius, 0, Math.PI * 2);
           ctx.fill();
         }
+      } else if (effect.type === "blood_pool") {
+        ctx.fillStyle = effect.color;
+        ctx.beginPath();
+        ctx.arc(effect.position.x, effect.position.y, effect.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(255, 162, 184, 0.46)";
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.arc(effect.position.x, effect.position.y, effect.radius * 0.72, 0, Math.PI * 2);
+        ctx.stroke();
+      } else if (effect.type === "meteor_target") {
+        ctx.fillStyle = effect.color;
+        ctx.beginPath();
+        ctx.arc(effect.position.x, effect.position.y, effect.radius, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(227, 248, 255, 0.9)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(effect.position.x, effect.position.y, effect.radius * 0.8, 0, Math.PI * 2);
+        ctx.stroke();
       } else if (effect.type === "emerald_bloom") {
         const life = Math.max(0, effect.ttl / 480);
         ctx.globalAlpha = Math.max(0.12, life);
