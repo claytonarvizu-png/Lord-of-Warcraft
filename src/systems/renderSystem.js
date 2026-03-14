@@ -210,6 +210,14 @@ function renderEntities(ctx, state) {
       ctx.lineTo(fireX - 8, fireY + 8);
       ctx.stroke();
 
+      if (player.isInvulnerable) {
+        ctx.strokeStyle = "rgba(135, 255, 216, 0.92)";
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(0, 0, player.radius + 10, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
       ctx.fillStyle = "#ffcc89";
       ctx.beginPath();
       ctx.arc(fireX - 10, fireY + 10, 6, 0, Math.PI * 2);
@@ -763,6 +771,28 @@ function renderEffects(ctx, state) {
           ctx.arc(effect.position.x, effect.position.y, effect.radius, 0, Math.PI * 2);
           ctx.fill();
         }
+      } else if (effect.type === "emerald_bloom") {
+        const life = Math.max(0, effect.ttl / 480);
+        ctx.globalAlpha = Math.max(0.12, life);
+        ctx.fillStyle = effect.color;
+        ctx.beginPath();
+        ctx.arc(effect.position.x, effect.position.y, effect.radius * (1.5 - (life * 0.45)), 0, Math.PI * 2);
+        ctx.fill();
+        ctx.strokeStyle = "rgba(166, 255, 188, 0.88)";
+        ctx.lineWidth = 4;
+        ctx.beginPath();
+        ctx.arc(effect.position.x, effect.position.y, effect.radius * (1.15 - (life * 0.25)), 0, Math.PI * 2);
+        ctx.stroke();
+        for (let index = 0; index < 5; index += 1) {
+          const angle = (Math.PI * 2 * index) / 5;
+          ctx.strokeStyle = "rgba(117, 255, 146, 0.72)";
+          ctx.lineWidth = 3;
+          ctx.beginPath();
+          ctx.moveTo(effect.position.x + Math.cos(angle) * (effect.radius * 0.25), effect.position.y + Math.sin(angle) * (effect.radius * 0.25));
+          ctx.lineTo(effect.position.x + Math.cos(angle) * (effect.radius * 0.95), effect.position.y + Math.sin(angle) * (effect.radius * 0.95));
+          ctx.stroke();
+        }
+        ctx.globalAlpha = 1;
       } else if (effect.type === "impact") {
         const maxLife = effect.heavy ? 260 : 180;
         const life = Math.max(0, effect.ttl / maxLife);
@@ -833,7 +863,7 @@ function renderHud(hudLayer, state) {
     const cooldown = player ? Math.max(0, player.cooldowns[reserveSpellId] ?? 0) : 0;
     return `
       <div class="spell-chip compact">
-        <div class="loadout-row"><strong>F</strong><span class="tag">${spell.name}</span></div>
+        <div class="loadout-row"><strong>M3</strong><span class="tag">${spell.name}</span></div>
         <div class="loadout-row"><span>Mana ${spell.manaCost}</span><span>${cooldown <= 0 ? "Ready" : formatMs(cooldown)}</span></div>
       </div>
     `;

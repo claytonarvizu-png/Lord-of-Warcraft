@@ -28,7 +28,7 @@ export function createInputSystem({ canvas, state }) {
       syncMovement();
     }
 
-    if (event.code === "Space" && isDown && !event.repeat) {
+    if ((event.code === "Space" || event.code === "ShiftLeft" || event.code === "ShiftRight") && isDown && !event.repeat) {
       dashQueued = true;
       event.preventDefault();
     }
@@ -40,9 +40,6 @@ export function createInputSystem({ canvas, state }) {
     if (isDown && !event.repeat) {
       if (event.code === "KeyR") {
         spellQueued[1] = true;
-      }
-      if (event.code === "KeyF" || event.code === "KeyT" || event.code === "KeyG") {
-        spellQueued[2] = true;
       }
     }
   }
@@ -62,6 +59,15 @@ export function createInputSystem({ canvas, state }) {
     updateAim(event);
     if (event.button === 0) {
       primaryQueued = true;
+    }
+    if (event.button === 1) {
+      spellQueued[2] = true;
+      event.preventDefault();
+    }
+  });
+  canvas.addEventListener("auxclick", (event) => {
+    if (event.button === 1) {
+      event.preventDefault();
     }
   });
   canvas.addEventListener("contextmenu", (event) => event.preventDefault());

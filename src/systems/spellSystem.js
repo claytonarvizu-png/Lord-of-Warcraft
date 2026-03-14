@@ -39,13 +39,36 @@ export function tryCastSpell(state, spellId) {
     case "spawn_shadow_bolt":
       spawnProjectileFromPlayer(state, spell, { damageScale: spell.projectileScale ?? 1 });
       break;
-    case "spawn_ice_shard":
-      spawnProjectileFromPlayer(state, spell, { damageScale: 1, slow: { factor: spell.slowStrength, durationMs: 1800 } });
+    case "cast_emerald_surge":
+      castEmeraldSurge(state, spell);
       break;
     default:
       return false;
   }
   return true;
+}
+
+function castEmeraldSurge(state, spell) {
+  const player = state.player;
+  const healAmount = Math.round(player.stats.maxHp * 0.5);
+  player.hp = Math.min(player.stats.maxHp, player.hp + healAmount);
+  state.effects.push({
+    type: "damage_text",
+    position: { ...player.position },
+    ttl: 700,
+    value: healAmount,
+    color: "#7dff98",
+    rise: 0,
+    isHealing: true,
+    heavy: true,
+  });
+  state.effects.push({
+    type: "emerald_bloom",
+    position: { ...player.position },
+    radius: spell.radius ?? 28,
+    ttl: 480,
+    color: "rgba(100, 255, 122, 0.38)",
+  });
 }
 
 function spawnProjectileFromPlayer(state, spell, options) {
