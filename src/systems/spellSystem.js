@@ -27,10 +27,13 @@ export function tryCastSpell(state, spellId) {
   const player = state.player;
   const spell = getComputedSpell(state, spellId);
   const cooldown = player.cooldowns[spellId] ?? 0;
-  if (cooldown > 0 || player.mana < spell.manaCost) {
+  const manaCost = spell.effectHandlerId === "cast_emerald_surge"
+    ? Math.round(player.stats.maxMana * 0.75)
+    : spell.manaCost;
+  if (cooldown > 0 || player.mana < manaCost) {
     return false;
   }
-  player.mana -= spell.manaCost;
+  player.mana -= manaCost;
   player.cooldowns[spellId] = spell.cooldownMs;
   switch (spell.effectHandlerId) {
     case "spawn_fireball":

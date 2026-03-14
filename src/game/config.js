@@ -8,7 +8,7 @@ export const SAVE_KEY = "arcane-arena-save-v1";
 export const SAVE_VERSION = 1;
 export const PLAYER_BASE_STATS = {
   maxHp: 130,
-  maxMana: 120,
+  maxMana: 240,
   manaRegen: 10,
   moveSpeed: 292,
   dashCooldownMs: 3000,

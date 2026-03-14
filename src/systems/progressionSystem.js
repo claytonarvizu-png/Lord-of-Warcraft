@@ -185,7 +185,9 @@ export function getComputedSpell(state, spellId) {
     ...base,
     damage: Math.round(base.damage * derived.spellPower * (level === 2 && spellId === "fireball" ? 1.18 : 1)),
     cooldownMs: Math.max(120, Math.round(base.cooldownMs * derived.cooldownMultiplier)),
-    manaCost: Math.max(4, Math.round(base.manaCost * derived.manaCostMultiplier)),
+    manaCost: spellId === "ice_shard"
+      ? Math.round(derived.maxMana * 0.75)
+      : Math.max(4, Math.round(base.manaCost * derived.manaCostMultiplier)),
     maxTargets: base.maxTargets ? base.maxTargets + (level === 2 && spellId === "chain_lightning" ? 1 : 0) : undefined,
     projectileScale: spellId === "chain_lightning" && level === 2 ? 1.18 : 1,
     slowStrength: spellId === "ice_shard" ? (level === 2 ? 0.5 : 0.35) : undefined,
